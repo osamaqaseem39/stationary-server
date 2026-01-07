@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { OrderModel } from './order.model';
 import { InventoryModel } from '../inventory/inventory.model';
 import { ProductVariantModel } from '../products/productVariant.model';
+import { ProductModel } from '../products/product.model';
 import { AuthRequest } from '../../middleware/auth';
 
 export const createOrder = async (req: AuthRequest, res: Response) => {
@@ -43,11 +44,15 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       const itemTotal = variant.price * item.quantity;
       subtotal += itemTotal;
 
+      // Fetch product to get name
+      const product = await ProductModel.findById(variant.productId);
+      const productName = product?.name || '';
+
       orderItems.push({
         variantId: variant._id,
         price: variant.price,
         quantity: item.quantity,
-        productName: (await variant.populate('productId')).productId?.name || '',
+        productName,
         variantAttributes: variant.attributes
       });
     }
