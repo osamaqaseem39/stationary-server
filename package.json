@@ -1,7 +1,7 @@
 {
-  "name": "server",
+  "name": "gbs-server",
   "version": "1.0.0",
-  "description": "Express API server",
+  "description": "Express API server for GBS E-commerce platform",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -26,5 +26,22 @@
     "@types/cors": "^2.8.17",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/osamaqaseem39/stationary-server.git"
+  },
+  "keywords": [
+    "express",
+    "api",
+    "mongodb",
+    "jwt",
+    "ecommerce",
+    "backend"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
