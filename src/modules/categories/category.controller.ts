@@ -13,7 +13,7 @@ export const getCategories = async (req: Request, res: Response) => {
 
     const categories = await CategoryModel.find(query)
       .populate('parentId')
-      .sort({ name: 1 });
+      .sort({ displayOrder: 1, name: 1 });
 
     res.json({ categories });
   } catch (error) {
@@ -28,7 +28,7 @@ export const getCategory = async (req: Request, res: Response) => {
     const category = await CategoryModel.findById(id)
       .populate('parentId');
 
-    if (!category || !category.isActive) {
+    if (!category) {
       return res.status(404).json({ error: 'Category not found' });
     }
 
@@ -41,23 +41,59 @@ export const getCategory = async (req: Request, res: Response) => {
 
 export const createCategory = async (req: Request, res: Response) => {
   try {
-    const { name, parentId, description } = req.body;
+    const {
+      name,
+      slug,
+      parentId,
+      description,
+      shortDescription,
+      seoTitle,
+      seoDescription,
+      seoKeywords,
+      image,
+      displayOrder,
+      isActive,
+      showInMenu,
+      featured
+    } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Name is required' });
     }
 
-    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    // Generate slug if not provided
+    let generatedSlug = slug;
+    if (!generatedSlug) {
+      generatedSlug = name
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
     const category = await CategoryModel.create({
       name,
-      slug,
-      parentId,
-      description
+      slug: generatedSlug,
+      parentId: parentId || undefined,
+      description,
+      shortDescription,
+      seoTitle,
+      seoDescription,
+      seoKeywords,
+      image,
+      displayOrder: displayOrder || 0,
+      isActive: isActive !== false,
+      showInMenu: showInMenu !== false,
+      featured: featured || false
     });
 
     res.status(201).json({ category });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create category error:', error);
+    if (error.code === 11000) {
+      return res.status(400).json({ error: 'Category with this slug already exists' });
+    }
     res.status(500).json({ error: 'Failed to create category' });
   }
 };
@@ -65,9 +101,26 @@ export const createCategory = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const updateData: any = { ...req.body };
+    
+    // Generate slug if name changed and slug not provided
+    if (updateData.name && !updateData.slug) {
+      updateData.slug = updateData.name
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/[\s_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+    
+    // Handle parentId - set to undefined if empty string
+    if (updateData.parentId === '') {
+      updateData.parentId = undefined;
+    }
+
     const category = await CategoryModel.findByIdAndUpdate(
       id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
 
@@ -76,9 +129,31 @@ export const updateCategory = async (req: Request, res: Response) => {
     }
 
     res.json({ category });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update category error:', error);
+    if (error.code === 11000) {
+      return res.status(400).json({ error: 'Category with this slug already exists' });
+    }
     res.status(500).json({ error: 'Failed to update category' });
   }
 };
 
+export const deleteCategory = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const category = await CategoryModel.findByIdAndUpdate(
+      id,
+      { isActive: false },
+      { new: true }
+    );
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+    res.json({ message: 'Category deleted successfully' });
+  } catch (error) {
+    console.error('Delete category error:', error);
+    res.status(500).json({ error: 'Failed to delete category' });
+  }
+};

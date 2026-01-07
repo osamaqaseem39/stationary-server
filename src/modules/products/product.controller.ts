@@ -5,15 +5,27 @@ import { InventoryModel } from '../inventory/inventory.model';
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
-    const { categoryId, search, page = 1, limit = 20 } = req.query;
+    const { categoryId, search, page = 1, limit = 20, status } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    const query: any = { isActive: true };
+    const query: any = {};
+    
+    // Only filter by isActive if status is not explicitly provided
+    if (!status || status === 'active') {
+      query.isActive = true;
+    }
+    
+    if (status && status !== 'active') {
+      query.status = status;
+    }
+    
     if (categoryId) query.categoryId = categoryId;
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { description: { $regex: search, $options: 'i' } },
+        { shortDescription: { $regex: search, $options: 'i' } },
+        { sku: { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -21,12 +33,15 @@ export const getProducts = async (req: Request, res: Response) => {
       .populate('categoryId')
       .skip(skip)
       .limit(Number(limit))
-      .sort({ createdAt: -1 });
+      .sort({ menuOrder: 1, createdAt: -1 });
 
     const total = await ProductModel.countDocuments(query);
 
     res.json({
       products,
+      total,
+      page: Number(page),
+      limit: Number(limit),
       pagination: {
         page: Number(page),
         limit: Number(limit),
@@ -46,7 +61,7 @@ export const getProduct = async (req: Request, res: Response) => {
     const product = await ProductModel.findById(id)
       .populate('categoryId');
 
-    if (!product || !product.isActive) {
+    if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
@@ -76,7 +91,45 @@ export const getProduct = async (req: Request, res: Response) => {
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
-    const { name, description, categoryId, brand } = req.body;
+    const {
+      name,
+      shortDescription,
+      description,
+      categoryId,
+      productType,
+      brand,
+      vendor,
+      tags,
+      status,
+      featured,
+      regularPrice,
+      salePrice,
+      taxStatus,
+      taxClass,
+      sku,
+      manageStock,
+      stockQuantity,
+      stockStatus,
+      backorders,
+      lowStockThreshold,
+      weight,
+      length,
+      width,
+      height,
+      shippingClass,
+      requiresShipping,
+      shippingTaxable,
+      seoTitle,
+      seoDescription,
+      seoSlug,
+      seoKeywords,
+      images,
+      purchaseNote,
+      menuOrder,
+      reviewsAllowed,
+      catalogVisibility,
+      isActive
+    } = req.body;
 
     if (!name || !categoryId) {
       return res.status(400).json({ error: 'Name and categoryId are required' });
@@ -84,9 +137,42 @@ export const createProduct = async (req: Request, res: Response) => {
 
     const product = await ProductModel.create({
       name,
+      shortDescription,
       description,
       categoryId,
-      brand
+      productType,
+      brand,
+      vendor,
+      tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
+      status: status || 'active',
+      featured: featured || false,
+      regularPrice,
+      salePrice,
+      taxStatus: taxStatus || 'taxable',
+      taxClass: taxClass || 'standard',
+      sku,
+      manageStock: manageStock !== false,
+      stockQuantity,
+      stockStatus: stockStatus || 'instock',
+      backorders: backorders || 'no',
+      lowStockThreshold,
+      weight,
+      length,
+      width,
+      height,
+      shippingClass,
+      requiresShipping: requiresShipping !== false,
+      shippingTaxable: shippingTaxable !== false,
+      seoTitle,
+      seoDescription,
+      seoSlug,
+      seoKeywords,
+      images: Array.isArray(images) ? images : [],
+      purchaseNote,
+      menuOrder: menuOrder || 0,
+      reviewsAllowed: reviewsAllowed !== false,
+      catalogVisibility: catalogVisibility || 'visible',
+      isActive: isActive !== false
     });
 
     res.status(201).json({ product });
@@ -99,9 +185,21 @@ export const createProduct = async (req: Request, res: Response) => {
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const updateData: any = { ...req.body };
+    
+    // Handle tags array conversion
+    if (updateData.tags && typeof updateData.tags === 'string') {
+      updateData.tags = updateData.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t);
+    }
+    
+    // Handle images array
+    if (updateData.images && !Array.isArray(updateData.images)) {
+      updateData.images = [];
+    }
+
     const product = await ProductModel.findByIdAndUpdate(
       id,
-      req.body,
+      updateData,
       { new: true, runValidators: true }
     );
 
@@ -121,7 +219,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
     const { id } = req.params;
     const product = await ProductModel.findByIdAndUpdate(
       id,
-      { isActive: false },
+      { isActive: false, status: 'archived' },
       { new: true }
     );
 
@@ -135,4 +233,3 @@ export const deleteProduct = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to delete product' });
   }
 };
-

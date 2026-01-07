@@ -3,10 +3,55 @@ import { Schema, model, Types } from 'mongoose';
 export interface IProduct {
   _id: Types.ObjectId;
   name: string;
-  description: string;
+  shortDescription?: string;
+  description?: string;
   categoryId: Types.ObjectId;
+  productType?: string;
   brand?: string;
+  vendor?: string;
+  tags?: string[];
+  status?: 'active' | 'draft' | 'archived';
+  featured?: boolean;
   isActive: boolean;
+  
+  // Pricing
+  regularPrice?: number;
+  salePrice?: number;
+  taxStatus?: 'taxable' | 'shipping' | 'none';
+  taxClass?: string;
+  
+  // Inventory
+  sku?: string;
+  manageStock?: boolean;
+  stockQuantity?: number;
+  stockStatus?: 'instock' | 'outofstock' | 'onbackorder';
+  backorders?: 'no' | 'notify' | 'yes';
+  lowStockThreshold?: number;
+  
+  // Shipping
+  weight?: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  shippingClass?: string;
+  requiresShipping?: boolean;
+  shippingTaxable?: boolean;
+  
+  // SEO
+  seoTitle?: string;
+  seoDescription?: string;
+  seoSlug?: string;
+  seoKeywords?: string;
+  
+  // Images
+  images?: string[];
+  
+  // Additional
+  purchaseNote?: string;
+  menuOrder?: number;
+  reviewsAllowed?: boolean;
+  catalogVisibility?: 'visible' | 'catalog' | 'search' | 'hidden';
+  
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -14,13 +59,56 @@ export interface IProduct {
 const ProductSchema = new Schema<IProduct>(
   {
     name: { type: String, required: true },
+    shortDescription: String,
     description: String,
     categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    productType: String,
     brand: String,
-    isActive: { type: Boolean, default: true }
+    vendor: String,
+    tags: [String],
+    status: { type: String, enum: ['active', 'draft', 'archived'], default: 'active' },
+    featured: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
+    
+    // Pricing
+    regularPrice: { type: Number, min: 0 },
+    salePrice: { type: Number, min: 0 },
+    taxStatus: { type: String, enum: ['taxable', 'shipping', 'none'], default: 'taxable' },
+    taxClass: String,
+    
+    // Inventory
+    sku: String,
+    manageStock: { type: Boolean, default: true },
+    stockQuantity: { type: Number, min: 0 },
+    stockStatus: { type: String, enum: ['instock', 'outofstock', 'onbackorder'], default: 'instock' },
+    backorders: { type: String, enum: ['no', 'notify', 'yes'], default: 'no' },
+    lowStockThreshold: { type: Number, min: 0 },
+    
+    // Shipping
+    weight: { type: Number, min: 0 },
+    length: { type: Number, min: 0 },
+    width: { type: Number, min: 0 },
+    height: { type: Number, min: 0 },
+    shippingClass: String,
+    requiresShipping: { type: Boolean, default: true },
+    shippingTaxable: { type: Boolean, default: true },
+    
+    // SEO
+    seoTitle: String,
+    seoDescription: String,
+    seoSlug: String,
+    seoKeywords: String,
+    
+    // Images
+    images: [String],
+    
+    // Additional
+    purchaseNote: String,
+    menuOrder: { type: Number, default: 0 },
+    reviewsAllowed: { type: Boolean, default: true },
+    catalogVisibility: { type: String, enum: ['visible', 'catalog', 'search', 'hidden'], default: 'visible' }
   },
   { timestamps: true }
 );
 
 export const ProductModel = model<IProduct>('Product', ProductSchema);
-
