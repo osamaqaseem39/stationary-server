@@ -1,6 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { config } from './config/env';
+import { ensureDatabaseConnection } from './config/database';
 
 const app: Express = express();
 
@@ -12,9 +13,20 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
+// Health check (no database connection needed)
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Ensure database connection before handling API requests (important for serverless)
+app.use(async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await ensureDatabaseConnection();
+    next();
+  } catch (error) {
+    console.error('Database connection error in middleware:', error);
+    res.status(503).json({ error: 'Database connection failed' });
+  }
 });
 
 // API Routes
