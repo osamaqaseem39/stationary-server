@@ -1,5 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import path from 'path';
 import { config } from './config/env';
 import { ensureDatabaseConnection } from './config/database';
 import mongoose from 'mongoose';
@@ -13,6 +14,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Health check with database status
 app.get('/health', async (req: Request, res: Response) => {
@@ -101,6 +105,7 @@ import productVariantRoutes from './modules/products/productVariant.routes';
 import categoryRoutes from './modules/categories/category.routes';
 import orderRoutes from './modules/orders/order.routes';
 import inventoryRoutes from './modules/inventory/inventory.routes';
+import uploadRoutes from './modules/upload/upload.routes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -109,6 +114,7 @@ app.use('/api/variants', productVariantRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
