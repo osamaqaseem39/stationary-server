@@ -57,6 +57,14 @@ export interface IProduct {
   // Images
   images?: string[];
   
+  // Product Bundle/Set
+  isBundle?: boolean;
+  bundleItems?: Array<{
+    productId: Types.ObjectId;
+    quantity: number;
+    name?: string; // Cached product name for display
+  }>;
+  
   // Additional
   purchaseNote?: string;
   menuOrder?: number;
@@ -123,6 +131,14 @@ const ProductSchema = new Schema<IProduct>(
     
     // Images
     images: [String],
+    
+    // Product Bundle/Set
+    isBundle: { type: Boolean, default: false },
+    bundleItems: [{
+      productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+      quantity: { type: Number, required: true, min: 1, default: 1 },
+      name: String // Cached product name for easier display
+    }],
     
     // Additional
     purchaseNote: String,

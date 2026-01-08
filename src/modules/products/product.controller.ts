@@ -132,6 +132,8 @@ export const createProduct = async (req: Request, res: Response) => {
       reviewsAllowed,
       catalogVisibility,
       isActive,
+      isBundle,
+      bundleItems,
       // Uniform fields
       size,
       color,
@@ -145,6 +147,23 @@ export const createProduct = async (req: Request, res: Response) => {
 
     if (!name || !categoryId) {
       return res.status(400).json({ error: 'Name and categoryId are required' });
+    }
+
+    // If bundle, validate and fetch product names
+    let processedBundleItems = undefined;
+    if (isBundle && bundleItems && Array.isArray(bundleItems) && bundleItems.length > 0) {
+      processedBundleItems = [];
+      for (const item of bundleItems) {
+        const bundleProduct = await ProductModel.findById(item.productId);
+        if (!bundleProduct) {
+          return res.status(400).json({ error: `Product not found: ${item.productId}` });
+        }
+        processedBundleItems.push({
+          productId: item.productId,
+          quantity: item.quantity || 1,
+          name: bundleProduct.name,
+        });
+      }
     }
 
     const product = await ProductModel.create({
@@ -186,6 +205,8 @@ export const createProduct = async (req: Request, res: Response) => {
       reviewsAllowed: reviewsAllowed !== false,
       catalogVisibility: catalogVisibility || 'visible',
       isActive: isActive !== false,
+      isBundle: isBundle || false,
+      bundleItems: processedBundleItems,
       // Uniform fields
       size,
       color,
@@ -217,6 +238,23 @@ export const updateProduct = async (req: Request, res: Response) => {
     // Handle images array
     if (updateData.images && !Array.isArray(updateData.images)) {
       updateData.images = [];
+    }
+
+    // Handle bundle items - fetch product names if bundle
+    if (updateData.isBundle && updateData.bundleItems && Array.isArray(updateData.bundleItems) && updateData.bundleItems.length > 0) {
+      const processedBundleItems = [];
+      for (const item of updateData.bundleItems) {
+        const bundleProduct = await ProductModel.findById(item.productId);
+        if (!bundleProduct) {
+          return res.status(400).json({ error: `Product not found: ${item.productId}` });
+        }
+        processedBundleItems.push({
+          productId: item.productId,
+          quantity: item.quantity || 1,
+          name: bundleProduct.name,
+        });
+      }
+      updateData.bundleItems = processedBundleItems;
     }
 
     const product = await ProductModel.findByIdAndUpdate(
