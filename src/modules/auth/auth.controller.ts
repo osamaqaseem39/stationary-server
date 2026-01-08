@@ -19,10 +19,14 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Get customer role
-    const customerRole = await RoleModel.findOne({ name: 'customer' });
+    // Get or create customer role
+    let customerRole = await RoleModel.findOne({ name: 'customer' });
     if (!customerRole) {
-      return res.status(500).json({ error: 'Customer role not found' });
+      // Create customer role if it doesn't exist
+      customerRole = await RoleModel.create({
+        name: 'customer',
+        permissions: ['read:products', 'read:categories', 'create:orders', 'read:own:orders']
+      });
     }
 
     // Hash password
