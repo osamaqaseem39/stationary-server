@@ -7,12 +7,23 @@ export interface IProduct {
   description?: string;
   categoryId: Types.ObjectId;
   productType?: string;
-  brand?: string;
+  brand?: string; // Keep for backward compatibility
+  brandId?: Types.ObjectId; // Reference to Brand model
   vendor?: string;
   tags?: string[];
   status?: 'active' | 'draft' | 'archived';
   featured?: boolean;
   isActive: boolean;
+  
+  // Uniform-specific fields
+  size?: string;
+  color?: string;
+  gender?: 'male' | 'female' | 'unisex' | 'kids';
+  material?: string;
+  style?: string;
+  schoolName?: string;
+  grade?: string;
+  uniformType?: string; // e.g., 'school', 'sports', 'formal'
   
   // Pricing
   regularPrice?: number;
@@ -63,12 +74,23 @@ const ProductSchema = new Schema<IProduct>(
     description: String,
     categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     productType: String,
-    brand: String,
+    brand: String, // Keep for backward compatibility
+    brandId: { type: Schema.Types.ObjectId, ref: 'Brand' },
     vendor: String,
     tags: [String],
     status: { type: String, enum: ['active', 'draft', 'archived'], default: 'active' },
     featured: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
+    
+    // Uniform-specific fields
+    size: String,
+    color: String,
+    gender: { type: String, enum: ['male', 'female', 'unisex', 'kids'] },
+    material: String,
+    style: String,
+    schoolName: String,
+    grade: String,
+    uniformType: String,
     
     // Pricing
     regularPrice: { type: Number, min: 0 },

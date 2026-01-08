@@ -31,6 +31,7 @@ export const getProducts = async (req: Request, res: Response) => {
 
     const products = await ProductModel.find(query)
       .populate('categoryId')
+      .populate('brandId')
       .skip(skip)
       .limit(Number(limit))
       .sort({ menuOrder: 1, createdAt: -1 });
@@ -59,7 +60,8 @@ export const getProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const product = await ProductModel.findById(id)
-      .populate('categoryId');
+      .populate('categoryId')
+      .populate('brandId');
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
@@ -98,6 +100,7 @@ export const createProduct = async (req: Request, res: Response) => {
       categoryId,
       productType,
       brand,
+      brandId,
       vendor,
       tags,
       status,
@@ -128,7 +131,16 @@ export const createProduct = async (req: Request, res: Response) => {
       menuOrder,
       reviewsAllowed,
       catalogVisibility,
-      isActive
+      isActive,
+      // Uniform fields
+      size,
+      color,
+      gender,
+      material,
+      style,
+      schoolName,
+      grade,
+      uniformType
     } = req.body;
 
     if (!name || !categoryId) {
@@ -142,6 +154,7 @@ export const createProduct = async (req: Request, res: Response) => {
       categoryId,
       productType,
       brand,
+      brandId,
       vendor,
       tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
       status: status || 'active',
@@ -172,7 +185,16 @@ export const createProduct = async (req: Request, res: Response) => {
       menuOrder: menuOrder || 0,
       reviewsAllowed: reviewsAllowed !== false,
       catalogVisibility: catalogVisibility || 'visible',
-      isActive: isActive !== false
+      isActive: isActive !== false,
+      // Uniform fields
+      size,
+      color,
+      gender,
+      material,
+      style,
+      schoolName,
+      grade,
+      uniformType
     });
 
     res.status(201).json({ product });
