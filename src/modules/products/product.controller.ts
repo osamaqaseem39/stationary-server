@@ -145,8 +145,13 @@ export const createProduct = async (req: Request, res: Response) => {
       uniformType
     } = req.body;
 
-    if (!name || !categoryId) {
-      return res.status(400).json({ error: 'Name and categoryId are required' });
+    // For bundles, category is optional. For regular products, category is required
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+    
+    if (!isBundle && !categoryId) {
+      return res.status(400).json({ error: 'Category is required for regular products' });
     }
 
     // If bundle, validate and fetch product names
@@ -170,7 +175,7 @@ export const createProduct = async (req: Request, res: Response) => {
       name,
       shortDescription,
       description,
-      categoryId,
+      categoryId: isBundle ? (categoryId || undefined) : categoryId, // Optional for bundles
       productType,
       brand,
       brandId,

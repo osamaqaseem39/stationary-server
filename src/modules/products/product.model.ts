@@ -5,7 +5,7 @@ export interface IProduct {
   name: string;
   shortDescription?: string;
   description?: string;
-  categoryId: Types.ObjectId;
+  categoryId?: Types.ObjectId; // Optional for bundles
   productType?: string;
   brand?: string; // Keep for backward compatibility
   brandId?: Types.ObjectId; // Reference to Brand model
@@ -80,7 +80,7 @@ const ProductSchema = new Schema<IProduct>(
     name: { type: String, required: true },
     shortDescription: String,
     description: String,
-    categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: false }, // Optional for bundles
     productType: String,
     brand: String, // Keep for backward compatibility
     brandId: { type: Schema.Types.ObjectId, ref: 'Brand' },
