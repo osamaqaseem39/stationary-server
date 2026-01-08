@@ -47,7 +47,7 @@ router.post(
   '/single',
   authenticate,
   uploadSingle.single('file'),
-  uploadSingleImage
+  uploadSingleImage as express.RequestHandler
 );
 
 // Upload multiple images (protected route)
@@ -55,7 +55,7 @@ router.post(
   '/multiple',
   authenticate,
   uploadMultiple.array('files', 10),
-  uploadMultipleImages
+  uploadMultipleImages as express.RequestHandler
 );
 
 // Delete image (protected route)

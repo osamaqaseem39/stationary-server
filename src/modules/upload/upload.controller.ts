@@ -3,15 +3,18 @@ import path from 'path';
 import fs from 'fs';
 import { uploadConfig, ensureUploadDirectory } from './upload.config';
 
-interface UploadRequest extends Request {
-  files?: Express.Multer.File[];
+interface SingleFileRequest extends Request {
   file?: Express.Multer.File;
+}
+
+interface MultipleFilesRequest extends Request {
+  files?: Express.Multer.File[];
 }
 
 /**
  * Upload a single image file
  */
-export const uploadSingleImage = async (req: UploadRequest, res: Response) => {
+export const uploadSingleImage = async (req: SingleFileRequest, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -45,7 +48,7 @@ export const uploadSingleImage = async (req: UploadRequest, res: Response) => {
 /**
  * Upload multiple image files
  */
-export const uploadMultipleImages = async (req: UploadRequest, res: Response) => {
+export const uploadMultipleImages = async (req: MultipleFilesRequest, res: Response) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
