@@ -2,6 +2,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { config } from './config/env';
 import { ensureDatabaseConnection } from './config/database';
+import mongoose from 'mongoose';
 
 const app: Express = express();
 
@@ -13,9 +14,72 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check (no database connection needed)
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check with database status
+app.get('/health', async (req: Request, res: Response) => {
+  try {
+    const connection = mongoose.connection;
+    const readyState = connection.readyState;
+    const readyStateNames: { [key: number]: string } = {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting',
+    };
+
+    // Try to ensure database connection
+    let dbStatus = 'unknown';
+    let dbDetails: any = null;
+
+    try {
+      await ensureDatabaseConnection();
+      dbStatus = 'connected';
+      
+      const dbName = connection.db?.databaseName;
+      const host = connection.host;
+      const port = connection.port;
+      
+      dbDetails = {
+        database: dbName || 'N/A',
+        host: host || 'N/A',
+        port: port || 'N/A',
+        readyState: readyStateNames[readyState] || 'unknown',
+        readyStateCode: readyState
+      };
+
+      // Try to get collection count
+      try {
+        const collections = await connection.db?.listCollections().toArray();
+        dbDetails.collections = collections?.length || 0;
+      } catch (error) {
+        // Ignore collection listing errors
+      }
+    } catch (error) {
+      dbStatus = 'disconnected';
+      dbDetails = {
+        error: (error as Error).message,
+        readyState: readyStateNames[readyState] || 'unknown',
+        readyStateCode: readyState
+      };
+    }
+
+    const healthStatus = dbStatus === 'connected' ? 'healthy' : 'degraded';
+    const statusCode = dbStatus === 'connected' ? 200 : 503;
+
+    res.status(statusCode).json({
+      status: healthStatus,
+      timestamp: new Date().toISOString(),
+      database: {
+        status: dbStatus,
+        ...dbDetails
+      }
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: (error as Error).message
+    });
+  }
 });
 
 // Ensure database connection before handling API requests (important for serverless)
