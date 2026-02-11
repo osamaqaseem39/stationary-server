@@ -11,6 +11,13 @@ export interface IUser {
   updatedAt?: Date;
 }
 
+export interface IUserInput {
+  name: string;
+  email: string;
+  password: string;
+  roleId?: string;
+}
+
 const UserSchema = new Schema<IUser>(
   {
     name: { type: String, required: true },
